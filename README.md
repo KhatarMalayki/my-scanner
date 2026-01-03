@@ -1,6 +1,6 @@
-# BlindScanner
+# LeelScanner
 
-**BlindScanner** adalah aplikasi native Windows yang memungkinkan Anda untuk mengakses scanner USB yang terhubung ke komputer Windows melalui antarmuka web, mirip dengan shared printer. Aplikasi ini dirancang untuk memberikan akses scanning ke seluruh jaringan lokal dengan fitur OCR multi-bahasa offline.
+**LeelScanner** adalah aplikasi native Windows yang memungkinkan Anda untuk mengakses scanner USB yang terhubung ke komputer Windows melalui antarmuka web, mirip dengan shared printer. Aplikasi ini dirancang untuk memberikan akses scanning ke seluruh jaringan lokal dengan fitur OCR multi-bahasa offline.
 
 ## 🚀 Fitur
 
