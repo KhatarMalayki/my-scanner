@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlindScanner - Network Scanner Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        button.danger:hover {
+            background: #c82333;
+        }
+
+        button.success {
+            background: #28a745;
+        }
+
+        button.success:hover {
+            background: #218838;
+        }
+
+        .device-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .device-item {
+            border: 2px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .device-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .device-item.busy {
+            border-color: #ffc107;
+            background: #fff9e6;
+        }
+
+        .device-item.offline {
+            border-color: #dc3545;
+            background: #ffe6e6;
+            opacity: 0.7;
+        }
+
+        .device-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .device-info {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .device-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .device-status.available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .device-status.busy {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .device-status.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .device-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .scan-form {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .job-item {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .job-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .job-info {
+            flex: 1;
+        }
+
+        .job-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .job-details {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+
+        .job-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .job-status.queued {
+            background: #e7f3ff;
+            color: #0066cc;
+        }
+
+        .job-status.scanning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .job-status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .job-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .job-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .job-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .job-actions button {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+
+        .close-btn {
+            background: none;
+            color: #666;
+            font-size: 28px;
+            font-weight: bold;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+        }
+
+        .close-btn:hover {
+            color: #000;
+            background: none;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        @media (max-width: 768px) {
+            .device-list {
+                grid-template-columns: 1fr;
+            }
+
+            .job-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .job-actions {
+                width: 100%;
+            }
+
+            .job-actions button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖨️ BlindScanner</h1>
+            <div class="header-actions">
+                <button onclick="refreshDevices()">🔄 Refresh Scanners</button>
+                <button class="secondary" onclick="openSettings()">⚙️ Settings</button>
+            </div>
+        </header>
+
+        <div class="card">
+            <h2>📡 Available Scanners</h2>
+            <div id="deviceList" class="device-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading scanners...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Recent Scan Jobs</h2>
+            <div id="jobList" class="job-list">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading jobs...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scan Modal -->
+    <div id="scanModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🖨️ Start Scan</h2>
+                <button class="close-btn" onclick="closeScanModal()">&times;</button>
+            </div>
+            <form id="scanForm" class="scan-form">
+                <input type="hidden" id="scanDeviceId">
+                <div class="form-group">
+                    <label for="scanDeviceName">Scanner:</label>
+                    <input type="text" id="scanDeviceName" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="scanDpi">Resolution (DPI):</label>
+                    <select id="scanDpi">
+                        <option value="150">150 DPI (Fast)</option>
+                        <option value="200">200 DPI</option>
+                        <option value="300" selected>300 DPI (Recommended)</option>
+                        <option value="600">600 DPI (High Quality)</option>
+                    </select>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="scanColor" checked>
+                    <label for="scanColor">Color Mode</label>
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="scanDuplex">
+                    <label for="scanDuplex">Duplex (Both Sides)</label>
+                </div>
+                <div class="form-group">
+                    <label for="scanOcrLanguage">OCR Language:</label>
+                    <select id="scanOcrLanguage">
+                        <option value="eng">English</option>
+                        <option value="ind">Indonesian</option>
+                        <option value="fra">French</option>
+                        <option value="deu">German</option>
+                        <option value="spa">Spanish</option>
+                        <option value="chi_sim">Chinese (Simplified)</option>
+                        <option value="jpn">Japanese</option>
+                        <option value="kor">Korean</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="success" style="flex: 1;">Start Scan</button>
+                    <button type="button" class="secondary" onclick="closeScanModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <button class="close-btn" onclick="closeSettingsModal()">&times;</button>
+            </div>
+            <div id="settingsContent">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading settings...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let scanners = [];
+        let jobs = [];
+        let selectedDevice = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshDevices();
+            refreshJobs();
+
+            // Auto-refresh jobs every 3 seconds
+            setInterval(refreshJobs, 3000);
+
+            // Setup scan form submit
+            document.getElementById('scanForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                startScan();
+            });
+        });
+
+        async function refreshDevices() {
+            try {
+                const response = await fetch('/api/devices');
+                scanners = await response.json();
+                renderDevices();
+            } catch (error) {
+                console.error('Error loading devices:', error);
+                document.getElementById('deviceList').innerHTML = `
+                    <div class="alert error">
+                        Failed to load scanners. Make sure the service is running.
+                    </div>
+                `;
+            }
+        }
+
+        function renderDevices() {
+            const deviceList = document.getElementById('deviceList');
+
+            if (scanners.length === 0) {
+                deviceList.innerHTML = `
+                    <div class="empty-state">
+                        <p style="font-size: 48px;">🖨️</p>
+                        <p>No scanners found</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Connect a scanner and click Refresh</p>
+                    </div>
+                `;
+                return;
+            }
+
+            deviceList.innerHTML = scanners.map(device => `
+                <div class="device-item ${device.Status === 1 ? 'busy' : ''} ${device.Status === 2 ? 'offline' : ''}">
+                    <div class="device-name">${escapeHtml(device.Name)}</div>
+                    <div class="device-info">📦 ${escapeHtml(device.Manufacturer)}</div>
+                    <div class="device-info">🏷️ ${escapeHtml(device.Model)}</div>
+                    <div class="device-info">🔌 ${escapeHtml(device.ConnectionType)}</div>
+                    <span class="device-status ${getStatusClass(device.Status)}">
+                        ${getStatusText(device.Status)}
+                    </span>
+                    <div class="device-actions">
+                        <button onclick="openScanModal('${escapeHtml(device.Id)}', '${escapeHtml(device.Name)}')"
+                                ${device.Status !== 0 ? 'disabled' : ''}>
+                            🖨️ Scan
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getStatusClass(status) {
+            const statusMap = {
+                0: 'available',
+                1: 'busy',
+                2: 'offline',
+                3: 'error'
+            };
+            return statusMap[status] || 'offline';
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                0: 'Available',
+                1: 'Busy',
+                2: 'Offline',
+                3: 'Error'
+            };
+            return statusMap[status] || 'Unknown';
+        }
+
+        async function refreshJobs() {
+            try {
+                const response = await fetch('/api/jobs');
+                jobs = await response.json();
+                renderJobs();
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+            }
+        }
+
+        function renderJobs() {
+            const jobList = document.getElementById('jobList');
+
+            if (jobs.length === 0) {
+                jobList.innerHTML = `
+                    <div class="empty-state">
+                        <p style="font-size: 48px;">📄</p>
+                        <p>No scan jobs yet</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Start a scan to see jobs here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            jobList.innerHTML = jobs.map(job => `
+                <div class="job-item">
+                    <div class="job-info">
+                        <div class="job-title">${escapeHtml(job.DeviceName || 'Unknown Device')}</div>
+                        <div class="job-details">📅 ${formatDate(job.CreatedAt)}</div>
+                        <div class="job-details">📄 Pages: ${job.PageCount}</div>
+                        <div class="job-details">🎯 ${job.Dpi} DPI | ${job.ColorMode ? 'Color' : 'Grayscale'}</div>
+                        ${job.ErrorMessage ? `<div class="job-details" style="color: #dc3545;">❌ ${escapeHtml(job.ErrorMessage)}</div>` : ''}
+                        <span class="job-status ${getJobStatusClass(job.Status)}">
+                            ${getJobStatusText(job.Status)}
+                        </span>
+                    </div>
+                    <div class="job-actions">
+                        ${job.Status === 4 ? `<button class="success" onclick="downloadJob('${job.Id}')">⬇️ Download</button>` : ''}
+                        ${job.Status === 1 || job.Status === 2 ? `<button class="danger" onclick="cancelJob('${job.Id}')">❌ Cancel</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getJobStatusClass(status) {
+            const statusMap = {
+                0: 'queued',
+                1: 'scanning',
+                2: 'processing',
+                4: 'completed',
+                5: 'failed'
+            };
+            return statusMap[status] || 'queued';
+        }
+
+        function getJobStatusText(status) {
+            const statusMap = {
+                0: 'Queued',
+                1: 'Scanning',
+                2: 'Processing',
+                4: 'Completed',
+                5: 'Failed'
+            };
+            return statusMap[status] || 'Unknown';
+        }
+
+        function openScanModal(deviceId, deviceName) {
+            selectedDevice = scanners.find(d => d.Id === deviceId);
+            document.getElementById('scanDeviceId').value = deviceId;
+            document.getElementById('scanDeviceName').value = deviceName;
+            document.getElementById('scanModal').classList.add('active');
+        }
+
+        function closeScanModal() {
+            document.getElementById('scanModal').classList.remove('active');
+            selectedDevice = null;
+        }
+
+        async function startScan() {
+            const deviceId = document.getElementById('scanDeviceId').value;
+            const dpi = parseInt(document.getElementById('scanDpi').value);
+            const colorMode = document.getElementById('scanColor').checked;
+            const duplex = document.getElementById('scanDuplex').checked;
+            const ocrLanguage = document.getElementById('scanOcrLanguage').value;
+
+            const scanRequest = {
+                DeviceId: deviceId,
+                Dpi: dpi,
+                ColorMode: colorMode,
+                Duplex: duplex,
+                OcrLanguage: ocrLanguage
+            };
+
+            try {
+                const response = await fetch('/api/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(scanRequest)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    closeScanModal();
+                    refreshJobs();
+                    alert('Scan job started successfully!');
+                } else {
+                    alert('Failed to start scan: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error starting scan:', error);
+                alert('Failed to start scan. Please try again.');
+            }
+        }
+
+        async function cancelJob(jobId) {
+            if (!confirm('Are you sure you want to cancel this job?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/jobs/${jobId}/cancel`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    refreshJobs();
+                    alert('Job cancelled successfully');
+                } else {
+                    alert('Failed to cancel job');
+                }
+            } catch (error) {
+                console.error('Error cancelling job:', error);
+                alert('Failed to cancel job');
+            }
+        }
+
+        async function downloadJob(jobId) {
+            try {
+                window.location.href = `/api/download/${jobId}`;
+            } catch (error) {
+                console.error('Error downloading job:', error);
+                alert('Failed to download file');
+            }
+        }
+
+        async function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+
+            try {
+                const response = await fetch('/api/settings');
+                const settings = await response.json();
+
+                document.getElementById('settingsContent').innerHTML = `
+                    <div class="form-group">
+                        <label>Output Folder:</label>
+                        <input type="text" value="${escapeHtml(settings.OutputFolder)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Shared Folder:</label>
+                        <input type="text" value="${escapeHtml(settings.SharedFolder || 'Not set')}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Tessdata Path:</label>
+                        <input type="text" value="${escapeHtml(settings.TessdataPath)}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Web Server Port:</label>
+                        <input type="text" value="${settings.WebServerPort}" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>Default DPI:</label>
+                        <input type="text" value="${settings.DefaultDpi}" readonly>
+                    </div>
+                    <div class="alert info">
+                        <strong>Note:</strong> To change settings, edit the <code>appsettings.json</code> file and restart the application.
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                document.getElementById('settingsContent').innerHTML = `
+                    <div class="alert error">Failed to load settings</div>
+                `;
+            }
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
